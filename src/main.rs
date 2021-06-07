@@ -1,20 +1,41 @@
+use dotenv::dotenv;
 use rust_oauth2_study::{
-    handlers::{hello_handler, login_handler},
-    routes::{hello_route, login_route},
-    LoginQueryParams,
+    config::Config,
+    handlers::{hello_handler, shopify_handler},
+    routes::{hello_route, shopify_route},
 };
+use std::net::SocketAddr;
+use std::sync::Arc;
 use warp::Filter;
 
 pub mod api;
 
 #[tokio::main]
 async fn main() {
-    println!("Listening at 0.0.0.0:3030");
+    dotenv().ok();
+    let config = Arc::new(Config::new());
+
+    println!("Listening at {}", &config.app_addr);
 
     let hello = hello!().with(warp::log("hello"));
-    let login = login!().with(warp::log("login"));
+    let shopify = shopify!(config.clone()).with(warp::log("shopify"));
 
-    let end = hello.or(login);
+    let end = hello.or(shopify);
 
-    warp::serve(end).run(([0, 0, 0, 0], 3030)).await;
+    let socket_address = config
+        .clone()
+        .app_addr
+        .parse::<SocketAddr>()
+        .expect("Could not parse Addr");
+
+    if config.clone().tls {
+        warp::serve(end)
+            .tls()
+            .cert_path(config.clone().cert_path.as_ref().unwrap())
+            .key_path(config.clone().key_path.as_ref().unwrap())
+            .run(socket_address)
+            .await;
+    } else {
+        warp::serve(end).run(socket_address).await;
+    }
 }

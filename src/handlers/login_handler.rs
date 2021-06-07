@@ -86,10 +86,10 @@ pub async fn accept_login(
             .unwrap();
 
             // Redirecting to hydra
-            Ok(warp::redirect(completed_request.redirect_to.parse::<Uri>().unwrap()))
-        },
-        None => {
-            Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap()))
+            Ok(warp::redirect(
+                completed_request.redirect_to.parse::<Uri>().unwrap(),
+            ))
         }
+        None => Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap())),
     }
 }
