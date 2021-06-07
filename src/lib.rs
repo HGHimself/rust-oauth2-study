@@ -2,7 +2,6 @@ pub mod api;
 pub mod config;
 pub mod handlers;
 pub mod routes;
-pub mod view;
 
 extern crate dotenv;
 
