@@ -15,8 +15,6 @@ async fn main() {
     dotenv().ok();
     let config = Arc::new(Config::new());
 
-    println!("Listening at {}", &config.app_addr);
-
     let hello = hello!().with(warp::log("hello"));
     let shopify = shopify!(config.clone()).with(warp::log("shopify"));
 
@@ -28,7 +26,11 @@ async fn main() {
         .parse::<SocketAddr>()
         .expect("Could not parse Addr");
 
+    println!("Listening at {}", &config.app_addr);
+
     if config.clone().tls {
+        println!("TLS Enabled!");
+
         warp::serve(end)
             .tls()
             .cert_path(config.clone().cert_path.as_ref().unwrap())

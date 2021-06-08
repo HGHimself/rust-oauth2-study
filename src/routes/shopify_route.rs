@@ -1,4 +1,4 @@
-use crate::{config::Config, with_config, InstallQueryParams};
+use crate::{config::Config, with_config, ConfirmQueryParams, InstallQueryParams};
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
@@ -14,17 +14,10 @@ pub fn shopify_install(config: Arc<Config>) -> BoxedFilter<(InstallQueryParams, 
         .boxed()
 }
 
-pub fn shopify_confirm(
-    config: Arc<Config>,
-) -> BoxedFilter<(Arc<Config>, String, String, String, String, String, String)> {
+pub fn shopify_confirm(config: Arc<Config>) -> BoxedFilter<(ConfirmQueryParams, Arc<Config>)> {
     warp::get()
-        .and(path_prefix())
+        .and(warp::path("shopify_confirm"))
+        .and(warp::query::query::<ConfirmQueryParams>())
         .and(with_config(config))
-        .and(warp::path::param::<String>()) // code
-        .and(warp::path::param::<String>()) // hmac
-        .and(warp::path::param::<String>()) // host
-        .and(warp::path::param::<String>()) // timestamp
-        .and(warp::path::param::<String>()) // state
-        .and(warp::path::param::<String>()) // shop
         .boxed()
 }

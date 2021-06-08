@@ -22,11 +22,21 @@ pub struct LoginQueryParams {
     pub login_challenge: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct InstallQueryParams {
     hmac: String,
     shop: String,
     timestamp: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ConfirmQueryParams {
+    code: String,
+    hmac: String,
+    host: String,
+    timestamp: String,
+    state: String,
+    shop: String,
 }
 
 pub fn with_config(config: Arc<Config>) -> warp::filters::BoxedFilter<(Arc<Config>,)> {
