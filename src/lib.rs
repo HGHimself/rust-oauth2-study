@@ -62,8 +62,11 @@ pub fn establish_connection() -> PgConnection {
 }
 
 pub fn establish_connection_test() -> PgConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL_TEST").expect("DATABASE_URL must be set");
+    let database_url = db_test_url();
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
+}
+
+pub fn db_test_url() -> String {
+    dotenv().ok();
+    env::var("DATABASE_URL_TEST").expect("DATABASE_URL must be set")
 }
