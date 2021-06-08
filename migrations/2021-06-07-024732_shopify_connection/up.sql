@@ -1,8 +1,8 @@
 -- Your SQL goes here
-CREATE TABLE shopifyConnection (
+CREATE TABLE "shopifyConnection" (
   id SERIAL PRIMARY KEY,
   shop VARCHAR NOT NULL,
-  hmac VARCHAR NOT NULL,
+  nonce VARCHAR NOT NULL,
   access_token VARCHAR,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP,

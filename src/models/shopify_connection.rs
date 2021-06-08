@@ -9,31 +9,31 @@ use std::time;
 pub struct ShopifyConnection {
     pub id: i32,
     pub shop: String,
-    pub hmac: String,
+    pub nonce: String,
     pub access_token: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: Option<NaiveDateTime>,
     pub deleted_at: Option<NaiveDateTime>,
-    pub active: bool
+    pub active: bool,
 }
 
 #[derive(Insertable)]
 #[table_name = "shopifyConnection"]
 pub struct NewShopifyConnection {
     pub shop: String,
-    pub hmac: String,
+    pub nonce: String,
     pub access_token: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: Option<NaiveDateTime>,
     pub deleted_at: Option<NaiveDateTime>,
-    pub active: bool
+    pub active: bool,
 }
 
 impl NewShopifyConnection {
-    pub fn new(shop: String, hmac: String) -> Self {
+    pub fn new(shop: String, nonce: String) -> Self {
         NewShopifyConnection {
-            name,
-            owner,
+            shop,
+            nonce,
             access_token: None,
             created_at: now(),
             updated_at: None,
@@ -47,7 +47,10 @@ impl NewShopifyConnection {
     }
 }
 
-pub fn create(conn: &PgConnection, new_shopify_connection: &NewShopifyConnection) -> ShopifyConnection {
+pub fn create(
+    conn: &PgConnection,
+    new_shopify_connection: &NewShopifyConnection,
+) -> ShopifyConnection {
     diesel::insert_into(shopifyConnection::table)
         .values(new_shopify_connection)
         .get_result(conn)
@@ -67,10 +70,14 @@ pub fn read_by_shop(conn: &PgConnection, shop: String) -> Vec<ShopifyConnection>
         .expect("Error loading shopify_connection")
 }
 
-pub fn read_by_shop_and_hmac(conn: &PgConnection, shop: String, hmac: String) -> Vec<ShopifyConnection> {
+pub fn read_by_shop_and_nonce(
+    conn: &PgConnection,
+    shop: String,
+    nonce: String,
+) -> Vec<ShopifyConnection> {
     shopifyConnection::table
         .filter(shopifyConnection::shop.eq(shop))
-        .filter(shopifyConnection::hmac.eq(hmac))
+        .filter(shopifyConnection::nonce.eq(nonce))
         .load::<ShopifyConnection>(conn)
         .expect("Error loading shopify_connection")
 }
@@ -81,7 +88,9 @@ mod tests {
     use crate::establish_connection_test;
 
     fn cleanup_table(conn: &PgConnection) {
-        diesel::delete(shopifyConnection::table).execute(conn).unwrap();
+        diesel::delete(shopifyConnection::table)
+            .execute(conn)
+            .unwrap();
     }
 
     fn mock_struct() -> NewShopifyConnection {
@@ -121,7 +130,9 @@ mod tests {
 
         assert!(0 < shopify_connection.len());
 
-        let my_shopify_connection = shopify_connection.iter().find(|&x| x.name == new_shopify_connection.name);
+        let my_shopify_connection = shopify_connection
+            .iter()
+            .find(|&x| x.shop == new_shopify_connection.shop);
         assert!(
             my_shopify_connection.is_some(),
             "Could not find the created shopify_connection in the database!"
@@ -131,22 +142,22 @@ mod tests {
     }
 
     #[test]
-    fn it_reads_a_shopify_connection_by_name() {
+    fn it_reads_a_shopify_connection_by_shop() {
         let conn = establish_connection_test();
-        let name = String::from("ShopNameBaby");
+        let shop = String::from("ShopNameBaby");
 
         // make 2 shopify_connections, each with different categories
         let mut new_shopify_connection = mock_struct();
         create(&conn, &new_shopify_connection);
 
-        new_shopify_connection.name = name.clone();
+        new_shopify_connection.shop = shop.clone();
         create(&conn, &new_shopify_connection);
 
-        let shopify_connection = read_by_name(&conn, name.clone());
+        let shopify_connection = read_by_shop(&conn, shop.clone());
 
         assert_eq!(1, shopify_connection.len());
 
-        let my_shopify_connection = shopify_connection.iter().find(|x| x.name == name);
+        let my_shopify_connection = shopify_connection.iter().find(|x| x.shop == shop);
         assert!(
             my_shopify_connection.is_some(),
             "Could not find the created shopify_connection in the database!"
@@ -154,30 +165,31 @@ mod tests {
 
         cleanup_table(&conn);
     }
-    //
-    // #[test]
-    // fn it_reads_a_shopify_connection_by_address() {
-    //     let conn = establish_connection_test();
-    //     let address =
-    //         String::from("0cd1136c6702de4410d06d3ae80f592c9b2132ea232011bcc78fb53862cbd9ee");
-    //
-    //     // make 2 shopify_connections, each with different categories
-    //     let mut new_shopify_connection = mock_struct();
-    //     create(&conn, &new_shopify_connection);
-    //
-    //     new_shopify_connection.address = address.clone();
-    //     create(&conn, &new_shopify_connection);
-    //
-    //     let shopify_connection = read_by_address(&conn, address.clone());
-    //
-    //     assert_eq!(1, shopify_connection.len());
-    //
-    //     let my_shopify_connection = shopify_connection.iter().find(|x| x.address == address);
-    //     assert!(
-    //         my_shopify_connection.is_some(),
-    //         "Could not find the created shopify_connection in the database!"
-    //     );
-    //
-    //     cleanup_table(&conn);
-    // }
+
+    #[test]
+    fn it_reads_a_shopify_connection_by_shop_and_nonce() {
+        let conn = establish_connection_test();
+        let nonce =
+            String::from("0cd1136c6702de4410d06d3ae80f592c9b2132ea232011bcc78fb53862cbd9ee");
+
+        // make 2 shopify_connections, each with different categories
+        let mut new_shopify_connection = mock_struct();
+        create(&conn, &new_shopify_connection);
+
+        new_shopify_connection.nonce = nonce.clone();
+        create(&conn, &new_shopify_connection);
+
+        let shopify_connection =
+            read_by_shop_and_nonce(&conn, String::from("ShopName"), nonce.clone());
+
+        assert_eq!(1, shopify_connection.len());
+
+        let my_shopify_connection = shopify_connection.iter().find(|x| x.nonce == nonce);
+        assert!(
+            my_shopify_connection.is_some(),
+            "Could not find the created shopify_connection in the database!"
+        );
+
+        cleanup_table(&conn);
+    }
 }

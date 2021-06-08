@@ -1,15 +1,22 @@
 pub mod api;
 pub mod config;
+pub mod db_conn;
 pub mod handlers;
+pub mod models;
 pub mod routes;
+pub mod schema;
+pub mod utils;
 
+#[macro_use]
+extern crate diesel;
 extern crate dotenv;
 
-use crate::config::Config;
+use crate::{config::Config, db_conn::DbConn};
+use diesel::prelude::*;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use std::env;
+use std::sync::Arc;
 use warp::Filter;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -43,6 +50,10 @@ pub struct ConfirmQueryParams {
 
 pub fn with_config(config: Arc<Config>) -> warp::filters::BoxedFilter<(Arc<Config>,)> {
     warp::any().map(move || config.clone()).boxed()
+}
+
+pub fn with_db_conn(conn: Arc<DbConn>) -> warp::filters::BoxedFilter<(Arc<DbConn>,)> {
+    warp::any().map(move || conn.clone()).boxed()
 }
 
 pub fn establish_connection() -> PgConnection {

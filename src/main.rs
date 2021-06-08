@@ -1,6 +1,7 @@
 use dotenv::dotenv;
 use rust_oauth2_study::{
     config::Config,
+    db_conn::DbConn,
     handlers::{hello_handler, shopify_handler},
     routes::{hello_route, shopify_route},
 };
@@ -14,9 +15,10 @@ pub mod api;
 async fn main() {
     dotenv().ok();
     let config = Arc::new(Config::new());
+    let db_conn = Arc::new(DbConn::new(&config.db_path));
 
     let hello = hello!().with(warp::log("hello"));
-    let shopify = shopify!(config.clone()).with(warp::log("shopify"));
+    let shopify = shopify!(config.clone(), db_conn.clone()).with(warp::log("shopify"));
 
     let end = hello.or(shopify);
 

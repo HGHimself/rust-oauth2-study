@@ -1,8 +1,8 @@
 table! {
-    shopifyconnection (id) {
+    shopifyConnection (id) {
         id -> Int4,
         shop -> Varchar,
-        hmac -> Varchar,
+        nonce -> Varchar,
         access_token -> Nullable<Varchar>,
         created_at -> Timestamp,
         updated_at -> Nullable<Timestamp>,

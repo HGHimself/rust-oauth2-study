@@ -1,3 +1,5 @@
+use crate::establish_connection;
+use diesel::prelude::*;
 use std::env;
 
 #[derive(Clone)]
@@ -7,6 +9,7 @@ pub struct Config {
     pub tls: bool,
     pub cert_path: Option<String>,
     pub key_path: Option<String>,
+    pub db_path: String,
 }
 
 impl Config {
@@ -35,12 +38,15 @@ impl Config {
             None
         };
 
+        let db_path = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
         Config {
             app_addr,
             shopify_api_key,
             tls,
             cert_path,
             key_path,
+            db_path,
         }
     }
 }

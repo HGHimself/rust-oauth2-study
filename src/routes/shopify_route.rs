@@ -1,23 +1,39 @@
-use crate::{config::Config, with_config, ConfirmQueryParams, InstallQueryParams};
+use crate::{
+    config::Config, db_conn::DbConn, with_config, with_db_conn, ConfirmQueryParams,
+    InstallQueryParams,
+};
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
-fn path_prefix() -> BoxedFilter<()> {
+fn path_prefix_install() -> BoxedFilter<()> {
     warp::path("shopify_install").boxed()
 }
 
-pub fn shopify_install(config: Arc<Config>) -> BoxedFilter<(InstallQueryParams, Arc<Config>)> {
+fn path_prefix_confirm() -> BoxedFilter<()> {
+    warp::path("shopify_confirm").boxed()
+}
+
+pub fn shopify_install(
+    config: Arc<Config>,
+    db_conn: Arc<DbConn>,
+) -> BoxedFilter<(InstallQueryParams, Arc<Config>, Arc<DbConn>)> {
     warp::get()
-        .and(path_prefix())
+        .and(path_prefix_install())
         .and(warp::query::query::<InstallQueryParams>())
         .and(with_config(config))
+        .and(with_db_conn(db_conn))
         .boxed()
 }
 
-pub fn shopify_confirm(config: Arc<Config>) -> BoxedFilter<(ConfirmQueryParams, Arc<Config>)> {
+pub fn shopify_confirm(
+    config: Arc<Config>,
+    db_conn: Arc<DbConn>,
+) -> BoxedFilter<(ConfirmQueryParams, Arc<Config>, Arc<DbConn>)> {
     warp::get()
+        .and(path_prefix_confirm())
         .and(warp::path("shopify_confirm"))
         .and(warp::query::query::<ConfirmQueryParams>())
         .and(with_config(config))
+        .and(with_db_conn(db_conn))
         .boxed()
 }
