@@ -49,10 +49,22 @@ pub async fn shopify_confirm(
     */
 
     let shop_results =
-        shopify_connection::read_by_shop_and_nonce(&db_conn.get_conn(), params.shop, params.state);
+        shopify_connection::read_by_shop_and_nonce(&db_conn.get_conn(), params.shop.clone(), params.state);
     let shop = shop_results
         .get(0)
         .expect("No available shopify connection found");
+
+    let form_body = [
+        ("client_id", config.shopify_api_key.clone()),
+        ("client_secret", config.shopify_api_secret.clone())
+        ("code", params.code)
+    ];
+
+    let client = reqwest::Client::new();
+    let res = client.post(format!("https://{}/admin/oauth/access_token", params.shop))
+        .form(&form_body)
+        .send()
+        .await?;
 
     // gotta figure out the reply later
     Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap()))
