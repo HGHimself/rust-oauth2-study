@@ -14,22 +14,11 @@ extern crate dotenv;
 use crate::{config::Config, db_conn::DbConn};
 use diesel::prelude::*;
 use dotenv::dotenv;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::Arc;
 use warp::Filter;
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct LoginFormBody {
-    pub login_challenge: Option<String>,
-    pub username: String,
-    pub password: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct LoginQueryParams {
-    pub login_challenge: Option<String>,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InstallQueryParams {
@@ -48,12 +37,22 @@ pub struct ConfirmQueryParams {
     shop: String,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AccessTokenResponse {
+    access_token: String,
+    scope: String,
+}
+
 pub fn with_config(config: Arc<Config>) -> warp::filters::BoxedFilter<(Arc<Config>,)> {
     warp::any().map(move || config.clone()).boxed()
 }
 
 pub fn with_db_conn(conn: Arc<DbConn>) -> warp::filters::BoxedFilter<(Arc<DbConn>,)> {
     warp::any().map(move || conn.clone()).boxed()
+}
+
+pub fn with_reqwest_client(client: Arc<Client>) -> warp::filters::BoxedFilter<(Arc<Client>,)> {
+    warp::any().map(move || client.clone()).boxed()
 }
 
 pub fn establish_connection() -> PgConnection {

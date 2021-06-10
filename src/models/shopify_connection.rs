@@ -2,8 +2,6 @@ use crate::schema::shopifyConnection;
 use crate::utils::now;
 use chrono::naive::NaiveDateTime;
 use diesel::prelude::*;
-use std::error::Error;
-use std::time;
 
 #[derive(Queryable, Debug)]
 pub struct ShopifyConnection {

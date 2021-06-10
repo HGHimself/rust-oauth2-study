@@ -1,7 +1,8 @@
 use crate::{
-    config::Config, db_conn::DbConn, models::shopify_connection, ConfirmQueryParams,
-    InstallQueryParams,
+    config::Config, db_conn::DbConn, models::shopify_connection, AccessTokenResponse,
+    ConfirmQueryParams, InstallQueryParams,
 };
+use reqwest::Client;
 use std::sync::Arc;
 use warp::{self, http::Uri};
 
@@ -40,32 +41,46 @@ pub async fn shopify_confirm(
     params: ConfirmQueryParams,
     config: Arc<Config>,
     db_conn: Arc<DbConn>,
+    client: Arc<Client>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    println!("{:?}", params);
-    /*
-        The nonce is the same one that your app provided to Shopify during step two.
-        The hmac is valid. The HMAC is signed by Shopify as explained below, in Verification.
-        The shop parameter is a valid shop hostname, ends with myshopify.com, and doesn't contain characters other than letters (a-z), numbers (0-9), dots, and hyphens.
-    */
-
-    let shop_results =
-        shopify_connection::read_by_shop_and_nonce(&db_conn.get_conn(), params.shop.clone(), params.state);
-    let shop = shop_results
+    // try and find the shop without the completed request
+    let shop = shopify_connection::read_by_shop_and_nonce(
+            &db_conn.get_conn(),
+            params.shop.clone(),
+            params.state,
+        )
         .get(0)
         .expect("No available shopify connection found");
 
-    let form_body = [
-        ("client_id", config.shopify_api_key.clone()),
-        ("client_secret", config.shopify_api_secret.clone())
-        ("code", params.code)
+    let form_body = vec![
+        (String::from("client_id"), config.shopify_api_key.clone()),
+        (
+            String::from("client_secret"),
+            config.shopify_api_secret.clone(),
+        ),
+        (String::from("code"), params.code),
     ];
 
-    let client = reqwest::Client::new();
-    let res = client.post(format!("https://{}/admin/oauth/access_token", params.shop))
-        .form(&form_body)
-        .send()
-        .await?;
+    let access_token_json = fetch_access_token(client, &form_body, params.shop.clone());
+
+    // update the shop here
 
     // gotta figure out the reply later
     Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap()))
+}
+
+pub async fn fetch_access_token(
+    client: Arc<Client>,
+    form_body: &Vec<(String, String)>,
+    shop: String,
+) -> reqwest::Result<AccessTokenResponse> {
+    let access_token_json: AccessTokenResponse = client
+        .post(format!("https://{}/admin/oauth/access_token", shop))
+        .form(&form_body)
+        .send()
+        .await?
+        .json()
+        .await?;
+
+    Ok(access_token_json)
 }

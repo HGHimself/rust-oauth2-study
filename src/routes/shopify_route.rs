@@ -1,7 +1,8 @@
 use crate::{
-    config::Config, db_conn::DbConn, with_config, with_db_conn, ConfirmQueryParams,
-    InstallQueryParams,
+    config::Config, db_conn::DbConn, with_config, with_db_conn, with_reqwest_client,
+    ConfirmQueryParams, InstallQueryParams,
 };
+use reqwest::Client;
 use std::sync::Arc;
 use warp::{filters::BoxedFilter, Filter};
 
@@ -28,12 +29,14 @@ pub fn shopify_install(
 pub fn shopify_confirm(
     config: Arc<Config>,
     db_conn: Arc<DbConn>,
-) -> BoxedFilter<(ConfirmQueryParams, Arc<Config>, Arc<DbConn>)> {
+    client: Arc<Client>,
+) -> BoxedFilter<(ConfirmQueryParams, Arc<Config>, Arc<DbConn>, Arc<Client>)> {
     warp::get()
         .and(path_prefix_confirm())
         .and(warp::path("shopify_confirm"))
         .and(warp::query::query::<ConfirmQueryParams>())
         .and(with_config(config))
         .and(with_db_conn(db_conn))
+        .and(with_reqwest_client(client))
         .boxed()
 }
