@@ -1,3 +1,4 @@
+use dotenv::dotenv;
 use std::env;
 
 #[derive(Clone)]
@@ -13,6 +14,8 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Self {
+        dotenv().ok();
+
         let app_host = env::var("HOST").expect("HOST must be set");
         let app_port = env::var("PORT").expect("PORT must be set");
 

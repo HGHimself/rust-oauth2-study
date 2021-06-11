@@ -1,4 +1,3 @@
-use dotenv::dotenv;
 use rust_oauth2_study::{
     config::Config,
     db_conn::DbConn,
@@ -13,7 +12,6 @@ pub mod api;
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
     let config = Arc::new(Config::new());
     let db_conn = Arc::new(DbConn::new(&config.db_path));
     let client = Arc::new(reqwest::Client::new());

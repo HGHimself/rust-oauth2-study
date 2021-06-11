@@ -1,9 +1,10 @@
-use crate::schema::shopifyConnection;
+use crate::schema::shopify_connections;
 use crate::utils::now;
 use chrono::naive::NaiveDateTime;
 use diesel::prelude::*;
 
-#[derive(Queryable, Debug)]
+#[derive(Debug, Identifiable, Queryable)]
+#[table_name = "shopify_connections"]
 pub struct ShopifyConnection {
     pub id: i32,
     pub shop: String,
@@ -16,7 +17,7 @@ pub struct ShopifyConnection {
 }
 
 #[derive(Insertable)]
-#[table_name = "shopifyConnection"]
+#[table_name = "shopify_connections"]
 pub struct NewShopifyConnection {
     pub shop: String,
     pub nonce: String,
@@ -49,21 +50,21 @@ pub fn create(
     conn: &PgConnection,
     new_shopify_connection: &NewShopifyConnection,
 ) -> ShopifyConnection {
-    diesel::insert_into(shopifyConnection::table)
+    diesel::insert_into(shopify_connections::table)
         .values(new_shopify_connection)
         .get_result(conn)
         .expect("Error saving new shopify_connection")
 }
 
 pub fn read(conn: &PgConnection) -> Vec<ShopifyConnection> {
-    shopifyConnection::table
+    shopify_connections::table
         .load::<ShopifyConnection>(conn)
         .expect("Error loading shopify_connection")
 }
 
 pub fn read_by_shop(conn: &PgConnection, shop: String) -> Vec<ShopifyConnection> {
-    shopifyConnection::table
-        .filter(shopifyConnection::shop.eq(shop))
+    shopify_connections::table
+        .filter(shopify_connections::shop.eq(shop))
         .load::<ShopifyConnection>(conn)
         .expect("Error loading shopify_connection")
 }
@@ -73,11 +74,21 @@ pub fn read_by_shop_and_nonce(
     shop: String,
     nonce: String,
 ) -> Vec<ShopifyConnection> {
-    shopifyConnection::table
-        .filter(shopifyConnection::shop.eq(shop))
-        .filter(shopifyConnection::nonce.eq(nonce))
+    shopify_connections::table
+        .filter(shopify_connections::shop.eq(shop))
+        .filter(shopify_connections::nonce.eq(nonce))
         .load::<ShopifyConnection>(conn)
         .expect("Error loading shopify_connection")
+}
+
+pub fn update_access_token(
+    conn: &PgConnection,
+    shopify_connection: &ShopifyConnection,
+    access_token: String,
+) -> QueryResult<usize> {
+    diesel::update(shopify_connection)
+        .set(shopify_connections::access_token.eq(access_token))
+        .execute(conn)
 }
 
 #[cfg(test)]
@@ -86,7 +97,7 @@ mod tests {
     use crate::establish_connection_test;
 
     fn cleanup_table(conn: &PgConnection) {
-        diesel::delete(shopifyConnection::table)
+        diesel::delete(shopify_connections::table)
             .execute(conn)
             .unwrap();
     }
@@ -104,7 +115,7 @@ mod tests {
 
         create(&conn, &mock_struct());
 
-        let shopify_connection = shopifyConnection::table
+        let shopify_connection = shopify_connections::table
             .load::<ShopifyConnection>(&conn)
             .expect("Error loading shopify_connection");
 
@@ -119,7 +130,7 @@ mod tests {
 
         let new_shopify_connection = mock_struct();
 
-        let created_shopify_connection = diesel::insert_into(shopifyConnection::table)
+        let created_shopify_connection = diesel::insert_into(shopify_connections::table)
             .values(&new_shopify_connection)
             .get_result::<ShopifyConnection>(&conn)
             .expect("Error saving new shopify_connection");
@@ -183,6 +194,29 @@ mod tests {
         assert_eq!(1, shopify_connection.len());
 
         let my_shopify_connection = shopify_connection.iter().find(|x| x.nonce == nonce);
+        assert!(
+            my_shopify_connection.is_some(),
+            "Could not find the created shopify_connection in the database!"
+        );
+
+        cleanup_table(&conn);
+    }
+
+    #[test]
+    fn it_updates_a_shopify_connection_access_token() {
+        let conn = establish_connection_test();
+
+        let shopify_connection = create(&conn, &mock_struct());
+        let access_token = String::from("super ssssecret");
+
+        update_access_token(&conn, &shopify_connection, access_token.clone());
+
+        let shopify_connections = read_by_shop(&conn, shopify_connection.shop);
+
+        assert_eq!(1, shopify_connections.len());
+        let my_shopify_connection = shopify_connections
+            .iter()
+            .find(|x| x.access_token.as_ref().unwrap() == &access_token);
         assert!(
             my_shopify_connection.is_some(),
             "Could not find the created shopify_connection in the database!"

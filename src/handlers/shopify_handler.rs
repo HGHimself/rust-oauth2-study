@@ -1,6 +1,7 @@
 use crate::{
     config::Config, db_conn::DbConn, models::shopify_connection, AccessTokenResponse,
     ConfirmQueryParams, InstallQueryParams,
+    services::shopify_service
 };
 use reqwest::Client;
 use std::sync::Arc;
@@ -43,14 +44,19 @@ pub async fn shopify_confirm(
     db_conn: Arc<DbConn>,
     client: Arc<Client>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
+    let conn = db_conn.get_conn();
     // try and find the shop without the completed request
-    let shop = shopify_connection::read_by_shop_and_nonce(
-            &db_conn.get_conn(),
-            params.shop.clone(),
-            params.state,
-        )
-        .get(0)
-        .expect("No available shopify connection found");
+    let shoption = shopify_connection::read_by_shop_and_nonce(
+        &conn,
+        params.shop.clone(),
+        params.state,
+    );
+
+    let shop_conn = if let Some(o) = shoption.get(0) {
+        o
+    } else {
+        panic!("We are panicking here")
+    };
 
     let form_body = vec![
         (String::from("client_id"), config.shopify_api_key.clone()),
@@ -61,26 +67,15 @@ pub async fn shopify_confirm(
         (String::from("code"), params.code),
     ];
 
-    let access_token_json = fetch_access_token(client, &form_body, params.shop.clone());
+    let access_token_json = shopify_service::get_access_token(
+        client.clone(),
+        form_body,
+        format!("https://{}", params.shop)
+    ).await.expect("Could not fetch access token!");
 
     // update the shop here
+    shopify_connection::update_access_token(&conn, &shop_conn, access_token_json.access_token);
 
     // gotta figure out the reply later
     Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap()))
-}
-
-pub async fn fetch_access_token(
-    client: Arc<Client>,
-    form_body: &Vec<(String, String)>,
-    shop: String,
-) -> reqwest::Result<AccessTokenResponse> {
-    let access_token_json: AccessTokenResponse = client
-        .post(format!("https://{}/admin/oauth/access_token", shop))
-        .form(&form_body)
-        .send()
-        .await?
-        .json()
-        .await?;
-
-    Ok(access_token_json)
 }

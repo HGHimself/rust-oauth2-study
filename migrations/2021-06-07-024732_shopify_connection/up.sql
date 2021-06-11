@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TABLE "shopifyConnection" (
+CREATE TABLE "shopify_connections" (
   id SERIAL PRIMARY KEY,
   shop VARCHAR NOT NULL,
   nonce VARCHAR NOT NULL,

@@ -1,5 +1,5 @@
 table! {
-    shopifyConnection (id) {
+    shopify_connections (id) {
         id -> Int4,
         shop -> Varchar,
         nonce -> Varchar,
