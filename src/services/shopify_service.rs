@@ -1,6 +1,6 @@
 use crate::AccessTokenResponse;
-use std::sync::Arc;
 use reqwest::Client;
+use std::sync::Arc;
 
 pub async fn get_access_token(
     client: Arc<Client>,

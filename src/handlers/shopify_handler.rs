@@ -1,7 +1,6 @@
 use crate::{
-    config::Config, db_conn::DbConn, models::shopify_connection, AccessTokenResponse,
-    ConfirmQueryParams, InstallQueryParams,
-    services::shopify_service
+    config::Config, db_conn::DbConn, models::shopify_connection, services::shopify_service,
+    AccessTokenResponse, ConfirmQueryParams, InstallQueryParams,
 };
 use reqwest::Client;
 use std::sync::Arc;
@@ -46,11 +45,8 @@ pub async fn shopify_confirm(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let conn = db_conn.get_conn();
     // try and find the shop without the completed request
-    let shoption = shopify_connection::read_by_shop_and_nonce(
-        &conn,
-        params.shop.clone(),
-        params.state,
-    );
+    let shoption =
+        shopify_connection::read_by_shop_and_nonce(&conn, params.shop.clone(), params.state);
 
     let shop_conn = if let Some(o) = shoption.get(0) {
         o
@@ -70,8 +66,10 @@ pub async fn shopify_confirm(
     let access_token_json = shopify_service::get_access_token(
         client.clone(),
         form_body,
-        format!("https://{}", params.shop)
-    ).await.expect("Could not fetch access token!");
+        format!("https://{}", params.shop),
+    )
+    .await
+    .expect("Could not fetch access token!");
 
     // update the shop here
     shopify_connection::update_access_token(&conn, &shop_conn, access_token_json.access_token);
