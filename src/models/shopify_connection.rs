@@ -87,7 +87,10 @@ pub fn update_access_token(
     access_token: String,
 ) -> QueryResult<usize> {
     diesel::update(shopify_connection)
-        .set(shopify_connections::access_token.eq(access_token))
+        .set((
+            shopify_connections::access_token.eq(access_token),
+            shopify_connections::updated_at.eq(now()),
+        ))
         .execute(conn)
 }
 

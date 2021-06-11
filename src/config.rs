@@ -6,14 +6,16 @@ pub struct Config {
     pub app_addr: String,
     pub shopify_api_key: String,
     pub shopify_api_secret: String,
+    pub shopify_api_uri: String,
     pub tls: bool,
     pub cert_path: Option<String>,
     pub key_path: Option<String>,
     pub db_path: String,
+    pub is_mocking: bool,
 }
 
 impl Config {
-    pub fn new() -> Self {
+    pub fn new(is_mocking: bool) -> Self {
         dotenv().ok();
 
         let app_host = env::var("HOST").expect("HOST must be set");
@@ -44,14 +46,22 @@ impl Config {
 
         let db_path = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
+        let shopify_api_uri = String::from("https://");
+
         Config {
             app_addr,
             shopify_api_key,
             shopify_api_secret,
+            shopify_api_uri,
             tls,
             cert_path,
             key_path,
             db_path,
+            is_mocking,
         }
+    }
+
+    pub fn set_shopify_api_uri(&mut self, uri: String) {
+        self.shopify_api_uri = uri;
     }
 }

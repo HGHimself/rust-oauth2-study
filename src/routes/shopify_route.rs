@@ -33,7 +33,6 @@ pub fn shopify_confirm(
 ) -> BoxedFilter<(ConfirmQueryParams, Arc<Config>, Arc<DbConn>, Arc<Client>)> {
     warp::get()
         .and(path_prefix_confirm())
-        .and(warp::path("shopify_confirm"))
         .and(warp::query::query::<ConfirmQueryParams>())
         .and(with_config(config))
         .and(with_db_conn(db_conn))

@@ -12,8 +12,6 @@ pub async fn shopify_install(
     config: Arc<Config>,
     db_conn: Arc<DbConn>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    println!("{:?}", params);
-
     let formatted_path = format!(
         "https://{}/admin/oauth/authorize?\
             client_id={}\
@@ -63,16 +61,19 @@ pub async fn shopify_confirm(
         (String::from("code"), params.code),
     ];
 
-    let access_token_json = shopify_service::get_access_token(
-        client.clone(),
-        form_body,
-        format!("https://{}", params.shop),
-    )
-    .await
-    .expect("Could not fetch access token!");
+    let uri = if config.is_mocking {
+        config.shopify_api_uri.clone()
+    } else {
+        format!("{}{}", config.shopify_api_uri.clone(), params.shop)
+    };
+
+    let access_token_json = shopify_service::get_access_token(client.clone(), form_body, uri)
+        .await
+        .expect("Could not fetch access token!");
 
     // update the shop here
-    shopify_connection::update_access_token(&conn, &shop_conn, access_token_json.access_token);
+    shopify_connection::update_access_token(&conn, &shop_conn, access_token_json.access_token)
+        .expect("Could not insert to db");
 
     // gotta figure out the reply later
     Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap()))
