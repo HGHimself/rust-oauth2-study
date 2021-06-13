@@ -1,3 +1,5 @@
+#![cfg_attr(test, feature(proc_macro_hygiene))]
+
 pub mod api;
 pub mod config;
 pub mod db_conn;

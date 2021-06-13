@@ -3,6 +3,7 @@ mod shopify_integration_tests {
     use diesel::prelude::*;
     use dotenv::dotenv;
     use mockito::mock;
+    use mocktopus::mocking::*;
     use rust_oauth2_study::{
         config::Config,
         db_conn::DbConn,
@@ -14,9 +15,11 @@ mod shopify_integration_tests {
         },
         routes::{hello_route, shopify_route},
         schema::shopify_connections,
+        utils::gen_uuid,
         AccessTokenResponse,
     };
     use std::sync::Arc;
+    use uuid::Uuid;
     use warp::{self, Filter};
 
     fn cleanup_table(conn: &PgConnection) {
@@ -30,11 +33,15 @@ mod shopify_integration_tests {
         let config = Arc::new(Config::new(false));
         let db_conn = Arc::new(DbConn::new(&db_test_url()));
         let client = Arc::new(reqwest::Client::new());
+
         let shopify = shopify_route::shopify_install(config.clone(), db_conn.clone())
             .and_then(shopify_handler::shopify_install)
             .with(warp::log("shopify"));
 
         let shop_name = "bestbudz.myshopify.com";
+        let nonce = "some-nonce";
+
+        gen_uuid.mock_safe(move || MockResult::Return(nonce.to_string()));
 
         // send the request to our api,
         // hopefully sending back a redirect and saving an instance in the db
@@ -54,7 +61,7 @@ mod shopify_integration_tests {
         let shopify_connection = read_by_shop_and_nonce(
             &db_conn.get_conn(),
             shop_name.to_string(),
-            String::from("random-nonce"),
+            nonce.to_string(),
         );
         assert!(0 < shopify_connection.len());
 
@@ -98,6 +105,7 @@ mod shopify_integration_tests {
                 access_token
             ))
             .create();
+
         let res = warp::test::request()
             .method("GET")
             .path(&format!(

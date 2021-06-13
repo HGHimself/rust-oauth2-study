@@ -1,3 +1,1 @@
-source .env
-diesel database reset --database-url=$DATABASE_URL_TEST
-cargo test -- --test-threads=1
+cargo test --features mocks -- --test-threads=1

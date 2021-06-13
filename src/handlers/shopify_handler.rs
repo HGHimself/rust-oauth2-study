@@ -1,35 +1,47 @@
 use crate::{
     config::Config, db_conn::DbConn, models::shopify_connection, services::shopify_service,
-    AccessTokenResponse, ConfirmQueryParams, InstallQueryParams,
+    utils::gen_uuid, AccessTokenResponse, ConfirmQueryParams, InstallQueryParams,
 };
 use reqwest::Client;
 use std::sync::Arc;
 use warp::{self, http::Uri};
 
-// https://{shop}.myshopify.com/admin/oauth/authorize?client_id={api_key}&scope={scopes}&redirect_uri={redirect_uri}&state={nonce}&grant_options[]={access_mode}
+// when shopkeep requests to install our app,
+// they will click a link taking them to this handler.
+//
+// We redirect them back to their store's domain
+// to request access to x,y,z scope/permissions.
+//
+// e.x. https://{shop}.myshopify.com/admin/oauth/authorize
+//          ?client_id={api_key}
+//          &scope={scopes}
+//          &redirect_uri={redirect_uri}
+//          &state={nonce}
+//          &grant_options[]={access_mode}
 pub async fn shopify_install(
     params: InstallQueryParams,
     config: Arc<Config>,
     db_conn: Arc<DbConn>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    let formatted_path = format!(
-        "https://{}/admin/oauth/authorize?\
-            client_id={}\
-            &scope={}\
-            &redirect_uri={}\
-            &state={}",
-        params.shop.clone(),
+    let nonce = gen_uuid();
+    let conn = &db_conn.get_conn();
+
+    println!("{:?}", nonce);
+    // save install request in db to verify later
+    shopify_connection::NewShopifyConnection::new(params.shop.clone(), nonce.clone()).insert(conn);
+
+    // uri for the conform install page
+    let formatted_uri = format!(
+        "https://{}/admin/oauth/authorize?client_id={}&scope={}&redirect_uri={}&state={}",
+        params.shop,
         config.shopify_api_key,
-        "read_orders,write_orders",
-        "https://localhost:3030/shopify_confirm",
-        "random-nonce",
+        "read_orders,write_orders", // probably want to be config
+        "https://localhost:3030/shopify_confirm", // probably want to be config
+        nonce,
     );
 
-    shopify_connection::NewShopifyConnection::new(params.shop, String::from("random-nonce"))
-        .insert(&db_conn.get_conn());
-
     Ok(warp::redirect(
-        String::from(formatted_path).parse::<Uri>().unwrap(),
+        String::from(formatted_uri).parse::<Uri>().unwrap(),
     ))
 }
 
@@ -52,14 +64,11 @@ pub async fn shopify_confirm(
         panic!("We are panicking here")
     };
 
-    let form_body = vec![
-        (String::from("client_id"), config.shopify_api_key.clone()),
-        (
-            String::from("client_secret"),
-            config.shopify_api_secret.clone(),
-        ),
-        (String::from("code"), params.code),
-    ];
+    let form_body = form_body_from_args(
+        config.shopify_api_key.clone(),
+        config.shopify_api_secret.clone(),
+        params.code,
+    );
 
     let uri = if config.is_mocking {
         config.shopify_api_uri.clone()
@@ -77,4 +86,12 @@ pub async fn shopify_confirm(
 
     // gotta figure out the reply later
     Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap()))
+}
+
+fn form_body_from_args(api_key: String, api_secret: String, code: String) -> Vec<(String, String)> {
+    vec![
+        (String::from("client_id"), api_key),
+        (String::from("client_secret"), api_secret),
+        (String::from("code"), code),
+    ]
 }
