@@ -12,7 +12,6 @@ pub mod api;
 
 #[tokio::main]
 async fn main() {
-
     let config = Arc::new(Config::new(false));
     let db_conn = Arc::new(DbConn::new(&config.db_path));
     let client = Arc::new(reqwest::Client::new());

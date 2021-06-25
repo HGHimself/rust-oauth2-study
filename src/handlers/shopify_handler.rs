@@ -2,6 +2,9 @@ use crate::{
     config::Config, db_conn::DbConn, models::shopify_connection, services::shopify_service,
     utils::gen_uuid, AccessTokenResponse, ConfirmQueryParams, InstallQueryParams,
 };
+use sha2::Sha256;
+use hmac::{Hmac, Mac, NewMac};
+use lazy_regex::regex;
 use reqwest::Client;
 use std::sync::Arc;
 use warp::{self, http::Uri};
@@ -26,7 +29,6 @@ pub async fn shopify_install(
     let nonce = gen_uuid();
     let conn = &db_conn.get_conn();
 
-    println!("{:?}", nonce);
     // save install request in db to verify later
     shopify_connection::NewShopifyConnection::new(params.shop.clone(), nonce.clone()).insert(conn);
 
@@ -54,6 +56,19 @@ pub async fn shopify_confirm(
     client: Arc<Client>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     let conn = db_conn.get_conn();
+
+    let r = regex!("^[a-zA-Z0-9][a-zA-Z0-9\\-]*\\.myshopify\\.com$");
+    if !r.is_match(&params.shop) {
+        panic!("Could not validate shop uri")
+    }
+
+    let params_code = convert_query_params_to_hmac_code(&params);
+    let mut mac = Hmac::<Sha256>::new_from_slice(&config.shopify_api_secret.as_bytes())
+        .expect("HMAC can take key of any size");
+    mac.update(&params_code.as_bytes());
+    let hmac_bytes = hex::decode(params.hmac).expect("Decoding HMAC failed");
+    mac.verify(&hmac_bytes).unwrap();
+
     // try and find the shop without the completed request
     let shoption =
         shopify_connection::read_by_shop_and_nonce(&conn, params.shop.clone(), params.state);
@@ -61,7 +76,7 @@ pub async fn shopify_confirm(
     let shop_conn = if let Some(o) = shoption.get(0) {
         o
     } else {
-        panic!("We are panicking here")
+        panic!("Could not find shop and nonce")
     };
 
     let form_body = form_body_from_args(
@@ -88,10 +103,23 @@ pub async fn shopify_confirm(
     Ok(warp::redirect(String::from("/").parse::<Uri>().unwrap()))
 }
 
+// setup the form body to request the access token from shopify api
 fn form_body_from_args(api_key: String, api_secret: String, code: String) -> Vec<(String, String)> {
     vec![
         (String::from("client_id"), api_key),
         (String::from("client_secret"), api_secret),
         (String::from("code"), code),
     ]
+}
+
+// to verify the hmac, we need to turn the query params into the following shape
+// "code=0907a61c0c8d55e99db179b68161bc00&shop=some-shop.myshopify.com&state=0.6784241404160823&timestamp=1337178173"
+fn convert_query_params_to_hmac_code(params: &ConfirmQueryParams) -> String {
+    format!(
+        "code={}&shop={}&state={}&timestamp={}",
+        params.code.clone(),
+        params.shop.clone(),
+        params.state.clone(),
+        params.timestamp.clone()
+    )
 }

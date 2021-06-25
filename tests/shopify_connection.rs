@@ -80,6 +80,7 @@ mod shopify_integration_tests {
 
         let mut config = Config::new(true);
         config.set_shopify_api_uri(mockito::server_url());
+        config.set_shopify_secret_key(String::from("hush"));
         let arc_config = Arc::new(config);
 
         let db_conn = Arc::new(DbConn::new(&test_db_url));
@@ -89,8 +90,8 @@ mod shopify_integration_tests {
                 .and_then(shopify_handler::shopify_confirm)
                 .with(warp::log("shopify"));
 
-        let shop_name = "bestbudz.myshopify.com";
-        let nonce = "00a329c0648769a73afac7f9381e08fb43dbea72";
+        let shop_name = "some-shop.myshopify.com";
+        let nonce = "0.6784241404160823";
         let access_token = "f85632530bf277ec9ac6f649fc327f17";
 
         let new_shopify_connection =
@@ -110,12 +111,12 @@ mod shopify_integration_tests {
             .method("GET")
             .path(&format!(
                 "/shopify_confirm\
-                    ?code=e58c4d79044bccd3d9918d6608b09cad\
-                    &hmac=c9310602e83ddcb33ec3b1418d02f82c51c6af59c7e5a93953c6c216986e0ffb\
+                    ?code=0907a61c0c8d55e99db179b68161bc00\
+                    &hmac=700e2dadb827fcc8609e9d5ce208b2e9cdaab9df07390d2cbca10d7c328fc4bf\
                     &host=YmRyb2NrZXRzdG9yZS5teXNob3BpZnkuY29tL2FkbWlu\
                     &shop={}\
                     &state={}\
-                    &timestamp=1623437117",
+                    &timestamp=1337178173",
                 shop_name, nonce
             ))
             .reply(&shopify)

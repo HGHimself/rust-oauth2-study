@@ -64,4 +64,8 @@ impl Config {
     pub fn set_shopify_api_uri(&mut self, uri: String) {
         self.shopify_api_uri = uri;
     }
+
+    pub fn set_shopify_secret_key(&mut self, uri: String) {
+        self.shopify_api_secret = uri;
+    }
 }
