@@ -1,8 +1,5 @@
 use rust_oauth2_study::{
-    config::Config,
-    db_conn::DbConn,
-    handlers::{hello_handler, shopify_handler},
-    routes::{hello_route, shopify_route},
+    config::Config, db_conn::DbConn, handlers::shopify_handler, routes::shopify_route,
 };
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -16,11 +13,10 @@ async fn main() {
     let db_conn = Arc::new(DbConn::new(&config.db_path));
     let client = Arc::new(reqwest::Client::new());
 
-    let hello = hello!().with(warp::log("hello"));
     let shopify =
         shopify!(config.clone(), db_conn.clone(), client.clone()).with(warp::log("shopify"));
 
-    let end = hello.or(shopify);
+    let end = shopify;
 
     let socket_address = config
         .clone()

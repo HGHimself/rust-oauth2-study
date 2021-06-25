@@ -2,10 +2,10 @@ use crate::{
     config::Config, db_conn::DbConn, models::shopify_connection, services::shopify_service,
     utils::gen_uuid, AccessTokenResponse, ConfirmQueryParams, InstallQueryParams,
 };
-use sha2::Sha256;
 use hmac::{Hmac, Mac, NewMac};
 use lazy_regex::regex;
 use reqwest::Client;
+use sha2::Sha256;
 use std::sync::Arc;
 use warp::{self, http::Uri};
 
