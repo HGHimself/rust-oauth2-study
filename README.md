@@ -16,7 +16,7 @@ Throughout these two main flows, we will need to handle various scenarios in whi
 - The shop uninstalls the application (we would not be able to get a working session token)
 - The shop does not complete the authentication process (database entries will be left incomplete)
 
-## User Facing Flow
+### User Facing Flow
 1. Shop keeper signs up for the Service
 1. Service will create gift card products through a UI page/form
 1. User will purchase a gift card, or shop keep can credit a user
@@ -26,7 +26,7 @@ Throughout these two main flows, we will need to handle various scenarios in whi
 1. Charge is discounted, gift card value is debited
 1. Upon usage of credit through payment, our job is done
 
-## Questions
+### Questions
 ##### How does our system get notified that a gift card is purchased?
 We do not want to have to poll the Shopify API repetitively to find out a card has been bought. Maybe we will be able to have a hook attached to our gift card products and the hook will notify our service.
 
@@ -41,7 +41,7 @@ It appears that within the checkout page, you have a text field to enter a code 
 
 When a purchase that utilizes a gift card occurs, we will need to identify this and respond accordingly (by debiting the account, that is). Again, we want to avoid polling the API to find an event; a hook would better serve our purpose.
 
-# Blockchain Technology
+## Blockchain Technology
 We will use a popular blockchain, called **Ethereum**, to store our user's store credit in a persistent, decentralized manner. To do this, we will need to write a smart contract that will handle the logic of keeping a balance, as well as crediting and debiting appropriately.
 
 Our plan is to utilize [Truffle](https://www.trufflesuite.com/truffle) to manage our contracts throughout testing, compilation, and deployment.
@@ -51,7 +51,7 @@ Here are the following functions that we require (note they are already in Solid
 - `function credit(string memory storeId, string memory clientId, uint256 credits) public returns (bool)`
 - `function redeem(string memory storeId, string memory clientId, uint256 credits) public returns (bool)`
 
-## Questions
+### Questions
 ##### Is Ethereum the best platform to build upon?
 Smart contracts are exactly what we need. Being able to codify the logic into an immutable, distributed *contract* is perfect. An issue, though, is that Ethereum is hot at the moment and will be expensive. Each `write` transaction to the blockchain will incur a fee, and the pricing may be an issue; it is [low at the moment](https://www.theblockcrypto.com/post/108471/ethereum-eth-gas-fees-six-month-low-why) but has been upwards of 45$.
 
