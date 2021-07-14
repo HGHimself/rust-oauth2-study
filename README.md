@@ -4,27 +4,27 @@ https://stackoverflow.com/questions/61013311/how-do-i-handle-errors-in-warp-usin
 The goal of this service is to integrate with various e-commerce platforms in order to allow online stores to issue gift cards and store credit that is backed by blockchain technology.
 
 ## ECommerce Integration
-For a minimum viable product, our aim is to integrate only with Shopify. In order to do this, we will need a Shopify Partners account which will allow us to generate a custom application as well as the API keys that we need.
+For a minimum viable product, our aim is to integrate only with *Shopify*. In order to do this, we will need a [Shopify Partners](https://www.shopify.com/partners) account which will allow us to generate a custom application as well as the necessary API keys.
 
-When a shop keeper is looking to use our service, we will need to follow the authentication flow outlined in the [Shopify documentation](https://shopify.dev/apps/auth/oauth). We will need to decide what sort of scopes/permissions we will need to request of the shop.
+When a shop keeper is looking to use our service, we will need to follow the **authentication flow** outlined in the [Shopify documentation](https://shopify.dev/apps/auth/oauth). We will need to decide what sort of *scopes/permissions* we will need to request of the shop.
 
-After we are authenticated, our service will receive an access token from Shopify that needs to be saved. It will be valid as long as the shop has our service installed. When it comes time to do any sort of operations with the shop's API, we will need to request a [session token](https://shopify.dev/apps/auth/session-tokens). This flow will repeat whenever the token becomes invalid.
+After we are authenticated, our service will receive an *access token* from Shopify that needs to be saved. It will be valid as long as the shop has our service installed. When it comes time to do any sort of operations with the shop's API, we will need to request a [session token](https://shopify.dev/apps/auth/session-tokens). This flow will repeat whenever the token becomes invalid.
 
-It is important to keep in while developing that we will compose reusable services to follow the flow for each of these. This will save us time to adopt other e-commerce platforms.
+It is important to keep in mind while developing that we will compose reusable services to follow the flow for each of these. This will save us time to adopt other e-commerce platforms.
 
 Throughout these two main flows, we will need to handle various scenarios in which something may go wrong. Here is a working list of things that could go wrong:
 - The shop uninstalls the application (we would not be able to get a working session token)
 - The shop does not complete the authentication process (database entries will be left incomplete)
 
 ### User Facing Flow
-1. Shop keeper signs up for the Service
-1. Service will create gift card products through a UI page/form
-1. User will purchase a gift card, or shop keep can credit a user
-1. Once order is considered complete, user will receive an email with special code
+1. Shop keeper **signs up** for the Service
+1. Service will **create gift card** products through a UI page/form
+1. User will **purchase** a gift card, or shop keep can credit a user
+1. Once order is considered complete, user will **receive an email** with special code
 1. Shop keep can resend email if gift card is valid
-1. Upon checkout, special code will be entered in gift card location
-1. Charge is discounted, gift card value is debited
-1. Upon usage of credit through payment, our job is done
+1. Upon checkout, **special code** will be entered in gift card location
+1. Charge is **discounted**, gift card value is **debited**
+1. Upon usage of credit through payment, our job is **done**
 
 ### Questions
 ##### How does our system get notified that a gift card is purchased?
