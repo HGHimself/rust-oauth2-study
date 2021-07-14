@@ -42,9 +42,13 @@ It appears that within the checkout page, you have a text field to enter a code 
 When a purchase that utilizes a gift card occurs, we will need to identify this and respond accordingly (by debiting the account, that is). Again, we want to avoid polling the API to find an event; a hook would better serve our purpose.
 
 ## Blockchain Technology
-We will use a popular blockchain, called **Ethereum**, to store our user's store credit in a persistent, decentralized manner. To do this, we will need to write a smart contract that will handle the logic of keeping a balance, as well as crediting and debiting appropriately.
+We will use a popular blockchain, called **Ethereum**, to store our user's store credit in a persistent, decentralized manner. To do this, we will need to write a smart contract that will handle the logic of keeping a balance, as well as crediting and debiting appropriately. From there, we will have an API that exposes the contract functions to the outside world.
 
 Our plan is to utilize [Truffle](https://www.trufflesuite.com/truffle) to manage our contracts throughout testing, compilation, and deployment.
+
+To interact with our contract, we use a [Rust crate](https://github.com/gnosis/ethcontract-rs) from Gnosis. This will give us a Rust `struct` that wraps our contract and abstracts away all network calls.
+
+To complete the blockchain slice of the stack, we will need an API that exposes these functions found in the contract. GraphQL is one approach that I am fond of, although regular REST is valid as well.
 
 Here are the following functions that we require (note they are already in Solidity):
 - `function balanceOf(string memory storeId, string memory clientId) public view returns (uint256)`
