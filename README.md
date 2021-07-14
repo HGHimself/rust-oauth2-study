@@ -28,16 +28,16 @@ Throughout these two main flows, we will need to handle various scenarios in whi
 
 ### Questions
 ##### How does our system get notified that a gift card is purchased?
-We do not want to have to poll the Shopify API repetitively to find out a card has been bought. Maybe we will be able to have a hook attached to our gift card products and the hook will notify our service.
+We do not want to have to poll the Shopify API repetitively to find out a card has been bought. Maybe we could have a hook attached to our gift card products and the hook will notify our service.
 
 ##### Is giving the user a code the best possible way to handle customer authentication?
-How do we validate a credited user when they are attempting to redeem their store credit? One way is to provide them with a code, preferably though email, that will be entered into the Shopify checkout page. Maybe there is a more modern way that utilizes a cookie or something? We will have to keep sharing gift cards in mind.
+How do we validate a credited user when they are attempting to redeem their store credit? One way is to provide them with a code, preferably though email, this will be entered into the Shopify checkout page. Maybe there is a more modern way that utilizes a cookie or something? We will have to keep sharing gift cards in mind.
 
 ##### How do we get some sort of actionable element/button in the Shopify checkout page?
-We will need to be able to make sure the user will be able to recognize their ability to use a gift card when checking out. Hopefully this will take them to a checkout page that comes out of the box with Shopify.
+We will need to make sure the user can recognize their ability to use a gift card when checking out. Hopefully this will take them to a checkout page that comes out of the box with Shopify.
 
 ##### What entities need to exist within Shopify to utilize the Discount/Gift Card code feature?
-It appears that within the checkout page, you have a text field to enter a code in order to redeem a discount or code. Is there some sort of hook that we can use to accept the value coming through from that field? We would need to catch and process the input and somehow return a *discount* object that would be understood by Shopify to lower the price.
+It appears that within the checkout page, you have a text field to enter a code in order to redeem a discount or code. Is there some sort of hook that we can use to accept the value coming through from that field? We would need to accept and process the input and somehow return a *discount* object that would be understood by Shopify to lower the price.
 
 When a purchase that utilizes a gift card occurs, we will need to identify this and respond accordingly (by debiting the account, that is). Again, we want to avoid polling the API to find an event; a hook would better serve our purpose.
 
