@@ -10,6 +10,8 @@ When a shop keeper is looking to use our service, we will need to follow the aut
 
 After we are authenticated, our service will receive an access token from Shopify that needs to be saved. It will be valid as long as the shop has our service installed. When it comes time to do any sort of operations with the shop's API, we will need to request a [session token](https://shopify.dev/apps/auth/session-tokens). This flow will repeat whenever the token becomes invalid.
 
+It is important to keep in while developing that we will compose reusable services to follow the flow for each of these. This will save us time to adopt other e-commerce platforms.
+
 Throughout these two main flows, we will need to handle various scenarios in which something may go wrong. Here is a working list of things that could go wrong:
 - The shop uninstalls the application (we would not be able to get a working session token)
 - The shop does not complete the authentication process (database entries will be left incomplete)
@@ -40,13 +42,21 @@ It appears that within the checkout page, you have a text field to enter a code 
 When a purchase that utilizes a gift card occurs, we will need to identify this and respond accordingly (by debiting the account, that is). Again, we want to avoid polling the API to find an event; a hook would better serve our purpose.
 
 # Blockchain Technology
-We will use a popular blockchain, called Ethereum, to store our user's store credit in a persistent, decentralized manner. To do this, we will need to write a smart contract that will handle the logic of keeping a balance, as well as crediting and debiting appropriately.
+We will use a popular blockchain, called **Ethereum**, to store our user's store credit in a persistent, decentralized manner. To do this, we will need to write a smart contract that will handle the logic of keeping a balance, as well as crediting and debiting appropriately.
 
 Our plan is to utilize [Truffle](https://www.trufflesuite.com/truffle) to manage our contracts throughout testing, compilation, and deployment.
 
 Here are the following functions that we require (note they are already in Solidity):
-```
-function balanceOf(string memory storeId, string memory clientId) public view returns (uint256)
-function credit(string memory storeId, string memory clientId, uint256 credits) public returns (bool)
-function redeem(string memory storeId, string memory clientId, uint256 credits) public returns (bool)
-```
+- `function balanceOf(string memory storeId, string memory clientId) public view returns (uint256)`
+- `function credit(string memory storeId, string memory clientId, uint256 credits) public returns (bool)`
+- `function redeem(string memory storeId, string memory clientId, uint256 credits) public returns (bool)`
+
+## Questions
+##### Is Ethereum the best platform to build upon?
+Smart contracts are exactly what we need. Being able to codify the logic into an immutable, distributed *contract* is perfect. An issue, though, is that Ethereum is hot at the moment and will be expensive. Each `write` transaction to the blockchain will incur a fee, and the pricing may be an issue; it is [low at the moment](https://www.theblockcrypto.com/post/108471/ethereum-eth-gas-fees-six-month-low-why) but has been upwards of 45$.
+
+##### Do we need to look into more methods in our contract?
+We will be checking to see if a user is able to use credit on a purchase. It would make sense to be able to make one call that would see if a transaction would be valid. This would be followed by another subsequent call which would do the actual transaction. Seeing as we can do an initial check to see if they have a credit entity, we can get away with just the debit and credit functions, due to the following logic:
+
+- If the customer is purchasing something with a price that is greater than or equal to the balance of their store credit, the credit will be deducted from the price and their balance would become 0.
+- If the customer is purchasing something with a price that is less than the balance of their store credit, the price will be deducted from their credit balance and the price would become 0.
